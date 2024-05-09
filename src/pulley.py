@@ -1,4 +1,5 @@
 from subprocess import getstatusoutput
+from pathlib import Path
 
 # Simple (A)DB (Sh)ell for internal use by Pulley.
 class Ash():
@@ -25,3 +26,32 @@ class Ash():
 
 class PulleyException(Exception):
     pass
+
+class Pulley():
+    base: str = r'adb shell '
+    shell: Ash | None = None
+
+    def __init__(self, as_package: str | None = None) -> None:
+        self.shell = Ash(as_package)
+
+    def pull_file(self, remote_path: str, local_path: str) -> str | None:
+        remote_path, local_path = remote_path, local_path
+        target_path = f"{local_path}/{remote_path}"
+        
+        Path(target_path).parent.mkdir(exist_ok=True, parents=True)
+        
+        code, err = self.shell.run(
+            f'cat "{remote_path}" > '
+            f'"{target_path}"'
+        )
+
+        return err if code else None 
+
+    def read_file(self, remote_path: str) -> str:
+        code, contents_or_err = self.shell.run(
+            f'cat "{remote_path}"'
+        )
+        if code:
+            raise PulleyException(contents_or_err)
+
+        return contents_or_err
