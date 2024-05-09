@@ -36,7 +36,7 @@ class Pulley():
 
     def pull_file(self, remote_path: str, local_path: str) -> str | None:
         remote_path, local_path = remote_path, local_path
-        target_path = f"{local_path}/{remote_path}"
+        target_path = f"./{local_path}/{remote_path}"
         
         Path(target_path).parent.mkdir(exist_ok=True, parents=True)
         
@@ -55,3 +55,30 @@ class Pulley():
             raise PulleyException(contents_or_err)
 
         return contents_or_err
+
+    def pull_dir(self, remote_path: str, local_path: str):
+        code, message = self.shell.run(f"ls {remote_path}")
+        assert not code, message
+
+        children = message.split("\n")
+
+        for child in children:
+            if not child: continue
+            
+            child_path = f"{remote_path}/{child}"
+            
+            is_file, _ = self.shell.run(f'test -d "{child_path}"')
+
+            if not is_file:
+                self.pull_dir(
+                    remote_path=child_path,
+                    local_path=local_path
+                )
+                continue
+            
+            print(child_path)
+            err = self.pull_file(
+                remote_path=child_path,
+                local_path=local_path
+            )
+            if err: print(err)
