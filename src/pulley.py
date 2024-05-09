@@ -22,3 +22,6 @@ class Ash():
             if self.package is None
             else self.run_as_package(command)
         )
+
+class PulleyException(Exception):
+    pass
