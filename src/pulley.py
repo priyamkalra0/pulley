@@ -3,13 +3,14 @@ from pathlib import Path
 
 # Simple (A)DB (Sh)ell for internal use by Pulley.
 class Ash():
+    base: str = "adb shell "
     package: str | None = None
 
     def __init__(self, as_package: str | None = None) -> None:
         self.package = as_package
 
     def run_as_device(self, command: str) -> tuple[int, str]:
-        return getstatusoutput(Pulley.base + command) # type: ignore
+        return getstatusoutput(self.base + command) # type: ignore
 
     def run_as_package(self, command: str) -> tuple[int, str]:
         if self.package is None:
@@ -28,7 +29,6 @@ class PulleyException(Exception):
     pass
 
 class Pulley():
-    base: str = r'adb shell '
     shell: Ash | None = None
 
     def __init__(self, as_package: str | None = None) -> None:
@@ -48,13 +48,13 @@ class Pulley():
         return err if code else None 
 
     def read_file(self, remote_path: str) -> str:
-        code, contents_or_err = self.shell.run(
+        code, result = self.shell.run(
             f'cat "{remote_path}"'
         )
         if code:
-            raise PulleyException(contents_or_err)
+            raise PulleyException(result)
 
-        return contents_or_err
+        return result
 
     def pull_dir(self, remote_path: str, local_path: str):
         code, message = self.shell.run(f"ls {remote_path}")
